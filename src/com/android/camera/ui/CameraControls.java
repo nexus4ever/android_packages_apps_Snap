@@ -703,15 +703,19 @@ public class CameraControls extends RotatableLayout {
     }
 
     public void hideCameraSettings() {
-        for (View v : mTopViews) {
-            v.setVisibility(View.INVISIBLE);
-        }
+        mFrontBackSwitcher.setVisibility(View.INVISIBLE);
+        mHdrSwitcher.setVisibility(View.INVISIBLE);
+        mSceneModeSwitcher.setVisibility(View.INVISIBLE);
+        mFilterModeSwitcher.setVisibility(View.INVISIBLE);
+        mMenu.setVisibility(View.INVISIBLE);
     }
 
     public void showCameraSettings() {
-        for (View v : mTopViews) {
-            v.setVisibility(View.VISIBLE);
-        }
+        mFrontBackSwitcher.setVisibility(View.VISIBLE);
+        mHdrSwitcher.setVisibility(View.VISIBLE);
+        mSceneModeSwitcher.setVisibility(View.VISIBLE);
+        mFilterModeSwitcher.setVisibility(View.VISIBLE);
+        mMenu.setVisibility(View.VISIBLE);
     }
 
     private class ArrowTextView extends TextView {
