@@ -245,6 +245,8 @@ public class CameraSettings {
     public static final String KEY_TOUCH_FOCUS_DURATION = "pref_camera_touchfocus_duration_key";
     public static final String KEY_VIDEO_TOUCH_FOCUS_DURATION = "pref_video_touchfocus_duration_key";
 
+    public static final String KEY_SELFIE_FLASH = "pref_selfie_flash_key";
+
     public static final String EXPOSURE_DEFAULT_VALUE = "0";
 
     public static final int CURRENT_VERSION = 5;
@@ -751,13 +753,6 @@ public class CameraSettings {
 
         ListPreference videoRotation = group.findPreference(KEY_VIDEO_ROTATION);
 
-<<<<<<< HEAD
-=======
-        if (!mParameters.isPowerModeSupported() && powerMode != null) {
-            removePreference(group, powerMode.getKey());
-        }
-
->>>>>>> cd14209... Snap: Remove touch AF/AEC option
         if (selectableZoneAf != null) {
             filterUnsupportedOptions(group,
                     selectableZoneAf, mParameters.getSupportedSelectableZoneAf());

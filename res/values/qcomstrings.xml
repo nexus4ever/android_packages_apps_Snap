@@ -275,6 +275,10 @@
     <string name="pref_camera_facedetection_entry_off">Off</string>
     <string name="pref_camera_facedetection_entry_on">On</string>
 
+    <!-- Selfie Flash -->
+    <string name="pref_selfie_flash_title">Selfie flash</string>
+    <string name="pref_selfie_flash_default" translatable="false">off</string>
+
      <!-- Default redeye reduction setting. -->
      <string name="pref_camera_redeyereduction_default" translatable="false">disable</string>
 
