@@ -499,6 +499,7 @@ public class PhotoModule
         mCameraId = getPreferredCameraId(mPreferences);
 
         mContentResolver = mActivity.getContentResolver();
+        mApplicationContext = CameraApp.getContext();
 
         // Surface texture is from camera screen nail and startPreview needs it.
         // This must be done before startPreview.
@@ -832,8 +833,6 @@ public class PhotoModule
         if (mFirstTimeInitialized || mPaused) {
             return;
         }
-
-        mApplicationContext = CameraApp.getContext();
 
         // Initialize location service.
         boolean recordLocation = RecordLocationPreference.get(
