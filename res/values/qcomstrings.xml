@@ -843,6 +843,8 @@
 
     <string name="all_in_focus">All in Focus</string>
 
+    <string name="initial_recording_seconds" translatable="false">00:00</string>
+
      <!-- Touch-focus duration settings -->
      <string name="pref_camera_touchfocus_duration_title">Tap-to-focus duration</string>
      <string name="pref_camera_touchfocus_duration_default">3</string>
