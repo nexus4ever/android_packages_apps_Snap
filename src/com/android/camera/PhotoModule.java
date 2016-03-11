@@ -2033,6 +2033,7 @@ public class PhotoModule
                 setFlipValue();
                 mCameraDevice.setParameters(mParameters);
             }
+            mUI.tryToCloseSubList();
             mUI.setOrientation(mOrientation, true);
             if (mGraphView != null) {
                 mGraphView.setRotation(-mOrientation);
