@@ -827,6 +827,7 @@ public class WideAnglePanoramaModule
             ExifInterface exif = new ExifInterface();
             try {
                 exif.readExif(jpegData);
+                exif.addMakeAndModelTag();
                 exif.addGpsDateTimeStampTag(mTimeTaken);
                 exif.addDateTimeStampTag(ExifInterface.TAG_DATE_TIME, mTimeTaken,
                         TimeZone.getDefault());
