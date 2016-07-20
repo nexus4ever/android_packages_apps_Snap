@@ -1386,6 +1386,11 @@ public class PhotoMenu extends MenuController
             }
         }
         updateFilterModeIcon(pref, pref);
+
+        if (same(pref, CameraSettings.KEY_RECORD_LOCATION, "on")) {
+            mActivity.requestLocationPermission();
+        }
+
         super.onSettingChanged(pref);
     }
 
