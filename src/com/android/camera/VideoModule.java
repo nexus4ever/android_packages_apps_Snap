@@ -1949,7 +1949,7 @@ public class VideoModule implements CameraModule,
         mRecordingTotalTime = 0L;
         mRecordingStartTime = SystemClock.uptimeMillis();
         mUI.showRecordingUI(true);
-
+        mUI.doShutterAnimation();
         updateRecordingTime();
         keepScreenOn();
         UsageStatistics.onEvent(UsageStatistics.COMPONENT_CAMERA,
