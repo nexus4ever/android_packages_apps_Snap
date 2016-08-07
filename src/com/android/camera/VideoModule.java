@@ -457,6 +457,8 @@ public class VideoModule implements CameraModule,
 
         mPreferences.setLocalId(mActivity, mCameraId);
         CameraSettings.upgradeLocalPreferences(mPreferences.getLocal());
+        // we need to reset exposure for the preview
+        resetExposureCompensation();
 
         mOrientationManager = new OrientationManager(mActivity);
 
@@ -572,7 +574,7 @@ public class VideoModule implements CameraModule,
             }
 
             // Check if metering area or focus area is supported.
-            if (mFocusAreaSupported || mMeteringAreaSupported) {
+            if ((mFocusAreaSupported || mMeteringAreaSupported) && !mSnapshotInProgress) {
                 mFocusManager.onSingleTapUp(x, y);
             }
         }
@@ -862,14 +864,16 @@ public class VideoModule implements CameraModule,
     private void readVideoPreferences() {
         // The preference stores values from ListPreference and is thus string type for all values.
         // We need to convert it to int manually.
-        String videoQuality = mPreferences.getString(CameraSettings.KEY_VIDEO_QUALITY,
-                        null);
-        if (videoQuality == null) {
+        String videoQuality = mPreferences.getString(CameraSettings.KEY_VIDEO_QUALITY, null);
+        if (videoQuality == null || (videoQuality.length() < 3 && !videoQuality.contains("x"))) {
             mParameters = mCameraDevice.getParameters();
             String defaultQuality = mActivity.getResources().getString(
                     R.string.pref_video_quality_default);
-            if (!defaultQuality.equals("") && mCameraId == 0){
-                videoQuality = defaultQuality;
+            if (!defaultQuality.equals("")) {
+                if (CamcorderProfile.hasProfile(
+                    CameraSettings.VIDEO_QUALITY_TABLE.get(defaultQuality))) {
+                    videoQuality = defaultQuality;
+                }
             } else {
                 // check for highest quality supported
                 videoQuality = CameraSettings.getSupportedHighestVideoQuality(
@@ -942,7 +946,8 @@ public class VideoModule implements CameraModule,
 
     private boolean is4KEnabled() {
        if (mProfile.quality == CamcorderProfile.QUALITY_2160P ||
-           mProfile.quality == CamcorderProfile.QUALITY_4KDCI) {
+           mProfile.quality == CamcorderProfile.QUALITY_TIME_LAPSE_2160P ||
+           mProfile.quality == CamcorderProfile.QUALITY_4KDCI ) {
            return true;
        } else {
            return false;
@@ -1063,6 +1068,16 @@ public class VideoModule implements CameraModule,
                 ". mDesiredPreviewHeight=" + mDesiredPreviewHeight);
     }
 
+    private void resetExposureCompensation() {
+        String value = mPreferences.getString(CameraSettings.KEY_EXPOSURE,
+                CameraSettings.EXPOSURE_DEFAULT_VALUE);
+        if (!CameraSettings.EXPOSURE_DEFAULT_VALUE.equals(value)) {
+            Editor editor = mPreferences.edit();
+            editor.putString(CameraSettings.KEY_EXPOSURE, "0");
+            editor.apply();
+        }
+    }
+
     void setPreviewFrameLayoutCameraOrientation(){
         CameraInfo info = CameraHolder.instance().getCameraInfo()[mCameraId];
 
@@ -1089,6 +1104,8 @@ public class VideoModule implements CameraModule,
 
     @Override
     public void installIntentFilter() {
+        if(mReceiver != null)
+            return;
         // install an intent filter to receive SD card related events.
         IntentFilter intentFilter =
                 new IntentFilter(Intent.ACTION_MEDIA_EJECT);
@@ -1112,9 +1129,11 @@ public class VideoModule implements CameraModule,
     public void onResumeAfterSuper() {
         mUI.enableShutter(false);
         mZoomValue = 0;
+        resetExposureCompensation();
 
         initializeVideoControl();
         showVideoSnapshotUI(false);
+        installIntentFilter();
 
         if (!mPreviewing) {
             openCamera();
@@ -1465,7 +1484,7 @@ public class VideoModule implements CameraModule,
         mUnsupportedResolution = false;
 
         //check if codec supports the resolution, otherwise throw toast
-        /* List<VideoEncoderCap> videoEncoders = EncoderCapabilities.getVideoEncoders();
+        List<VideoEncoderCap> videoEncoders = EncoderCapabilities.getVideoEncoders();
         for (VideoEncoderCap videoEncoder: videoEncoders) {
             if (videoEncoder.mCodec == mVideoEncoder) {
                 if (videoWidth > videoEncoder.mMaxFrameWidth ||
@@ -1487,7 +1506,7 @@ public class VideoModule implements CameraModule,
                 }
                 break;
             }
-        } */
+        }
 
         long requestedSizeLimit = 0;
         closeVideoFileDescriptor();
@@ -1755,6 +1774,7 @@ public class VideoModule implements CameraModule,
     public void onError(MediaRecorder mr, int what, int extra) {
         Log.e(TAG, "MediaRecorder error. what=" + what + ". extra=" + extra);
         stopVideoRecording();
+        mUI.showUIafterRecording();
         if (what == MediaRecorder.MEDIA_RECORDER_ERROR_UNKNOWN) {
             // We may have run out of space on the sdcard.
             mActivity.updateStorageSpaceAndHint();
@@ -1810,6 +1830,7 @@ public class VideoModule implements CameraModule,
         mStartRecPending = true;
         mUI.cancelAnimations();
         mUI.setSwipingEnabled(false);
+        mUI.hideUIwhileRecording();
 
         mActivity.updateStorageSpaceAndHint();
         if (mActivity.getStorageSpaceBytes() <= Storage.LOW_STORAGE_THRESHOLD_BYTES) {
@@ -1821,7 +1842,7 @@ public class VideoModule implements CameraModule,
         if( mUnsupportedHFRVideoSize == true) {
             Log.e(TAG, "Unsupported HFR and video size combinations");
             RotateTextToast.makeText(mActivity,R.string.error_app_unsupported_hfr,
-                    Toast.LENGTH_LONG).show();
+                    Toast.LENGTH_SHORT).show();
             mStartRecPending = false;
             return false;
         }
@@ -1878,7 +1899,7 @@ public class VideoModule implements CameraModule,
         try {
             mMediaRecorder.start(); // Recording is now started
         } catch (RuntimeException e) {
-            Log.e(TAG, "Could not start media recorder. ", e);
+            Toast.makeText(mActivity,"Could not start media recorder.\n Can't start video recording.", Toast.LENGTH_LONG).show();
             releaseMediaRecorder();
             releaseAudioFocus();
             // If start fails, frameworks will not lock the camera for us.
@@ -1961,7 +1982,7 @@ public class VideoModule implements CameraModule,
         Log.v(TAG, "pauseVideoRecording");
         mMediaRecorderPausing = true;
         mRecordingTotalTime += SystemClock.uptimeMillis() - mRecordingStartTime;
-        //mMediaRecorder.pause();
+        mMediaRecorder.pause();
     }
 
     private void resumeVideoRecording() {
@@ -2259,10 +2280,10 @@ public class VideoModule implements CameraModule,
                     CameraSettings.getSupportedDISModes(mParameters))) {
                 mParameters.set(CameraSettings.KEY_QC_DIS_MODE,
                         mActivity.getString(R.string.pref_camera_dis_value_disable));
-                //mUI.overrideSettings(CameraSettings.KEY_DIS,
-                //        mActivity.getString(R.string.pref_camera_dis_value_disable));
-                //RotateTextToast.makeText(mActivity, R.string.video_quality_4k_disable_IS,
-                //        Toast.LENGTH_LONG).show();
+                mUI.overrideSettings(CameraSettings.KEY_DIS,
+                        mActivity.getString(R.string.pref_camera_dis_value_disable));
+                RotateTextToast.makeText(mActivity, R.string.video_quality_4k_disable_IS,
+                        Toast.LENGTH_LONG).show();
             } else {
                 Log.e(TAG, "Not supported IS mode = " +
                         mActivity.getString(R.string.pref_camera_dis_value_disable));
@@ -2340,6 +2361,7 @@ public class VideoModule implements CameraModule,
             Log.v(TAG, "current set resolution is : "+hfrsize+ " : Rate is : " + hfrRate );
             try {
                 Size size = null;
+                Log.i(TAG,"supported rate = " + mParameters.getSupportedVideoHighFrameRateModes());
                 if (isSupported(hfrRate, mParameters.getSupportedVideoHighFrameRateModes())) {
                     int index = mParameters.getSupportedVideoHighFrameRateModes().indexOf(
                             hfrRate);
@@ -2525,6 +2547,15 @@ public class VideoModule implements CameraModule,
         Log.e(TAG,"Video dimension in App->"+recordSize);
         if (CameraUtil.isSupported(mParameters, "video-size")) {
             mParameters.set("video-size", recordSize);
+        }
+        // Set exposure compensation
+        int value = CameraSettings.readExposure(mPreferences);
+        int max = mParameters.getMaxExposureCompensation();
+        int min = mParameters.getMinExposureCompensation();
+        if (value >= min && value <= max) {
+            mParameters.setExposureCompensation(value);
+        } else {
+            Log.w(TAG, "invalid exposure range: " + value);
         }
         // Set white balance parameter.
         String whiteBalance = mPreferences.getString(
