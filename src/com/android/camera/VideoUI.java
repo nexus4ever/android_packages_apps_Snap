@@ -876,7 +876,6 @@ public class VideoUI implements PieRenderer.PieListener,
     public void showRecordingUI(boolean recording) {
         mRecordingStarted = recording;
         mMenuButton.setVisibility(recording ? View.GONE : View.VISIBLE);
-        mPauseButton.setVisibility(View.GONE);
         if (recording) {
             mShutterButton.setImageResource(R.drawable.shutter_button_video_stop);
             hideSwitcher();
