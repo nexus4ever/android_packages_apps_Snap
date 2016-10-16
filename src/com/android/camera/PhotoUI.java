@@ -161,7 +161,8 @@ public class PhotoUI implements PieListener,
         @Override
         public void onLayoutChange(View v, int left, int top, int right,
                 int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-            tryToCloseSubList();
+            if (mMenu != null)
+                mMenu.tryToCloseSubList();
 
             Camera.Parameters parameters = ((PhotoModule)mController).getParameters();
             if(parameters != null) {
