@@ -4549,8 +4549,14 @@ public class PhotoModule
         mMeteringAreaSupported = CameraUtil.isMeteringAreaSupported(mInitialParams);
         mAeLockSupported = CameraUtil.isAutoExposureLockSupported(mInitialParams);
         mAwbLockSupported = CameraUtil.isAutoWhiteBalanceLockSupported(mInitialParams);
-        mContinuousFocusSupported = mInitialParams.getSupportedFocusModes().contains(
-                CameraUtil.FOCUS_MODE_CONTINUOUS_PICTURE);
+
+        List<String> focusModes = mInitialParams.getSupportedFocusModes();
+        if (focusModes != null &&
+                focusModes.contains(CameraUtil.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+            mContinuousFocusSupported = true;
+        } else {
+            mContinuousFocusSupported = false;
+        }
     }
 
     @Override
